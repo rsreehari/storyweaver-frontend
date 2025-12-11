@@ -13,21 +13,16 @@ interface BookGridProps {
 export const BookGrid: React.FC<BookGridProps> = ({ books, filters }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
-  const processedBooks = useMemo(() => {
-    // Apply filters
-    let result = filterEngine.filterBooks(books, filters);
+const processedBooks = useMemo(() => {
+  let result = filterEngine.filterBooks(books, filters);
 
-    // Apply search if query exists
-    if (filters.searchQuery.trim()) {
-      const searchResults = searchAlgorithm.search(result, filters.searchQuery);
-      result = searchResults.map((r) => r.book);
-    }
+  if (filters.searchQuery.trim()) {
+    const searchResults = searchAlgorithm.search(result, filters.searchQuery);
+    result = searchResults.map((r) => r.book);
+  }
 
-    // Apply sorting by date
-    result = filterEngine.sortBooks(result, filters.dateFilter);
-
-    return result;
-  }, [books, filters]);
+  return result;
+}, [books, filters]);
 
   const totalPages = Math.ceil(processedBooks.length / PAGE_SIZE);
   const paginatedBooks = useMemo(() => {

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Book, FilterState } from '../types/opds';
 import { filterEngine } from '../services/filterEngine';
 import { DATE_FILTER_OPTIONS } from '../utils/constants';
+import { STORYWEAVER_LANGUAGES_LIST, getLanguageNativeName } from '../utils/storyWeaverLanguages';
 import { STORYWEAVER_LEVELS } from '../utils/storyWeaverCategories';
 
 interface FilterSidebarProps {
@@ -43,14 +44,14 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
     }));
   };
 
-  const FilterCheckbox = ({ 
-    label, 
-    checked, 
+  const FilterCheckbox = ({
+    label,
+    checked,
     onChange,
     isCategory = false,
-  }: { 
-    label: string; 
-    checked: boolean; 
+  }: {
+    label: string;
+    checked: boolean;
     onChange: () => void;
     isCategory?: boolean;
   }) => (
@@ -61,9 +62,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         onChange={onChange}
         className="w-4 h-4 text-blue-600 rounded cursor-pointer"
       />
-      <span className={`ml-2 text-sm group-hover:text-blue-600 transition-colors ${
-        isCategory ? 'text-gray-700' : 'text-gray-700'
-      }`}>
+      <span
+        className={`ml-2 text-sm group-hover:text-blue-600 transition-colors ${
+          isCategory ? 'text-gray-700' : 'text-gray-700'
+        }`}
+      >
         {label}
       </span>
     </label>
@@ -89,17 +92,15 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
           <span>{icon}</span>
           {title}
         </h3>
-        <span className={`text-gray-500 transition-transform ${
-          expandedSections[sectionKey] ? 'rotate-180' : ''
-        }`}>
+        <span
+          className={`text-gray-500 transition-transform ${
+            expandedSections[sectionKey] ? 'rotate-180' : ''
+          }`}
+        >
           ▼
         </span>
       </button>
-      {expandedSections[sectionKey] && (
-        <div className="space-y-2">
-          {children}
-        </div>
-      )}
+      {expandedSections[sectionKey] && <div className="space-y-2">{children}</div>}
     </div>
   );
 
@@ -108,54 +109,78 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-          🎯 Filters
+          Filters
         </h2>
         {hasActiveFilters && (
           <button
             onClick={onReset}
             className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition-colors font-medium"
           >
-            ✕ Reset
+             Reset
           </button>
         )}
       </div>
 
       {/* Language Filter */}
-      <FilterSection title="Language" icon="🌍" sectionKey="languages">
-        <div className="space-y-2 max-h-48 overflow-y-auto">
-          {options.languages.slice(0, 12).map((lang) => (
-            <FilterCheckbox
-              key={lang}
-              label={lang}
-              checked={filters.languages.has(lang)}
-              onChange={() => onLanguageChange(lang)}
-            />
-          ))}
+      <FilterSection title="Language" icon="🗣" sectionKey="languages">
+        <div className="space-y-2 max-h-56 overflow-y-auto">
+          {STORYWEAVER_LANGUAGES_LIST.map((lang) => {
+            // Check if this language is in our books
+            const hasBooks = options.languages.some(
+              (bookLang) => bookLang.toLowerCase() === lang.toLowerCase()
+            );
+
+            if (!hasBooks) return null; // Don't show languages we don't have
+
+            const nativeName = getLanguageNativeName(lang);
+            const displayName =
+              nativeName !== lang ? `${lang} (${nativeName})` : lang;
+
+            return (
+              <FilterCheckbox
+                key={lang}
+                label={displayName}
+                checked={filters.languages.has(lang)}
+                onChange={() => onLanguageChange(lang)}
+              />
+            );
+          })}
         </div>
-        {options.languages.length > 12 && (
-          <p className="text-xs text-gray-500 mt-2">+{options.languages.length - 12} more</p>
-        )}
       </FilterSection>
 
-      {/* Level Filter */}
+      {/* Level Filter - UPDATED WITH OFFICIAL STORYWEAVER LEVELS */}
       {options.levels.length > 0 && (
         <FilterSection title="Reading Level" icon="📚" sectionKey="levels">
           <div className="space-y-2">
-            {STORYWEAVER_LEVELS.map((level) => (
-              <FilterCheckbox
-                key={level}
-                label={level}
-                checked={filters.levels.has(level)}
-                onChange={() => onLevelChange(level)}
-              />
-            ))}
+            {STORYWEAVER_LEVELS.map((level) => {
+              // Check if this level is in our books
+              const hasBooks = options.levels.some(
+                (bookLevel) => bookLevel.toLowerCase() === level.toLowerCase()
+              );
+
+              if (!hasBooks) return null; // Don't show levels we don't have
+
+              return (
+                <FilterCheckbox
+                  key={level}
+                  label={level}
+                  checked={filters.levels.has(level)}
+                  onChange={() => onLevelChange(level)}
+                />
+              );
+            })}
           </div>
+          {options.levels.length === 0 && (
+            <p className="text-xs text-gray-500 italic">
+              No reading levels available
+            </p>
+          )}
         </FilterSection>
       )}
 
-      {/* Category Filter - StoryWeaver Compatible */}
+      {/* Category Filter */}
       {options.categories.length > 0 && (
-        <FilterSection title="Categories" icon="🏷️" sectionKey="categories">
+        <FilterSection title="Categories" icon="🔍" sectionKey="categories">
           <div className="space-y-2 max-h-56 overflow-y-auto">
             {options.categories.map((cat) => (
               <FilterCheckbox
@@ -172,7 +197,7 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
       {/* Publisher Filter */}
       {options.publishers.length > 0 && (
-        <FilterSection title="Publishers" icon="🏢" sectionKey="publishers">
+        <FilterSection title="Publishers" icon="" sectionKey="publishers">
           <div className="space-y-2 max-h-40 overflow-y-auto">
             {options.publishers.slice(0, 10).map((pub) => (
               <FilterCheckbox
@@ -184,7 +209,9 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             ))}
           </div>
           {options.publishers.length > 10 && (
-            <p className="text-xs text-gray-500 mt-2">+{options.publishers.length - 10} more</p>
+            <p className="text-xs text-gray-500 mt-2">
+              +{options.publishers.length - 10} more
+            </p>
           )}
         </FilterSection>
       )}
@@ -196,7 +223,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
         </h3>
         <select
           value={filters.dateFilter}
-          onChange={(e) => onDateChange(e.target.value as FilterState['dateFilter'])}
+          onChange={(e) => {
+            const value = e.target.value as FilterState['dateFilter'];
+            console.log('Date filter changed to:', value); // Debug log
+            onDateChange(value);
+          }}
           className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer hover:border-blue-300 transition-colors"
         >
           {DATE_FILTER_OPTIONS.map((opt) => (
@@ -205,6 +236,13 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
             </option>
           ))}
         </select>
+        <p className="text-xs text-gray-500 mt-2">
+          {filters.dateFilter === 'all' && 'Showing all books'}
+          {filters.dateFilter === 'newest' && 'Newest books first'}
+          {filters.dateFilter === 'oldest' && 'Oldest books first'}
+          {filters.dateFilter === 'last30days' && 'Books from last 30 days'}
+          {filters.dateFilter === 'lastyear' && 'Books from last year'}
+        </p>
       </div>
 
       {/* Info Box */}
