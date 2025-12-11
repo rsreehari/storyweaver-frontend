@@ -14,22 +14,24 @@ export function isValidBook(data: any): data is Book {
 }
 
 export function validateAndSanitizeBook(book: any): Book {
-  const sanitizedCategories = Array.isArray(book.categories)
+  // Normalize and de-duplicate categories while keeping typing simple for strict TS
+  const sanitizedCategories: string[] = Array.isArray(book.categories)
     ? Array.from(
         new Set(
-          book.categories
-            .map((c: unknown) => String(c).slice(0, 50))
-            .filter((c: unknown): c is string => Boolean(c))
+          (book.categories as any[])
+            .map((c) => String(c).slice(0, 50))
+            .filter((c: string) => !!c)
         )
       )
     : [];
 
-  const sanitizedTags = Array.isArray(book.tags)
+  // Normalize and de-duplicate tags
+  const sanitizedTags: string[] = Array.isArray(book.tags)
     ? Array.from(
         new Set(
-          book.tags
-            .map((t: unknown) => String(t).slice(0, 50))
-            .filter((t: unknown): t is string => Boolean(t))
+          (book.tags as any[])
+            .map((t) => String(t).slice(0, 50))
+            .filter((t: string) => !!t)
         )
       )
     : [];
