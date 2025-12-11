@@ -1,4 +1,6 @@
+
 import { Book, FilterState, FilterOptions } from '../types/opds';
+import { STORYWEAVER_CATEGORIES, mapCategoryToStoryWeaver } from '../utils/storyWeaverCategories';
 
 class FilterEngine {
   filterBooks(books: Book[], filters: FilterState): Book[] {
@@ -24,7 +26,18 @@ class FilterEngine {
 
   private matchCategories(book: Book, filters: FilterState): boolean {
     if (filters.categories.size === 0) return true;
-    return book.categories.some((cat) => filters.categories.has(cat));
+    
+    // Check if any book category matches filtered categories
+    return book.categories.some((cat) => {
+      // Direct match
+      if (filters.categories.has(cat)) return true;
+      
+      // Mapped match (from OPDS to StoryWeaver)
+      const mappedCategory = mapCategoryToStoryWeaver(cat);
+      if (mappedCategory && filters.categories.has(mappedCategory)) return true;
+      
+      return false;
+    });
   }
 
   private matchPublisher(book: Book, filters: FilterState): boolean {
@@ -78,6 +91,22 @@ class FilterEngine {
   }
 
   getFilterOptions(books: Book[]): FilterOptions {
+    // Collect all unique categories (both original and mapped)
+    const allCategories = new Set<string>();
+    
+    books.forEach((book) => {
+      book.categories.forEach((cat) => {
+        // Add mapped StoryWeaver category
+        const mapped = mapCategoryToStoryWeaver(cat);
+        if (mapped) {
+          allCategories.add(mapped);
+        } else {
+          // Fall back to original if no mapping
+          allCategories.add(cat);
+        }
+      });
+    });
+
     return {
       languages: Array.from(new Set(books.map((b) => b.language)))
         .filter(Boolean)
@@ -89,9 +118,8 @@ class FilterEngine {
             .filter((level): level is string => Boolean(level))
         )
       ).sort(),
-      categories: Array.from(new Set(books.flatMap((b) => b.categories)))
-        .filter(Boolean)
-        .sort(),
+      // Use StoryWeaver categories (mapped)
+      categories: STORYWEAVER_CATEGORIES.filter((cat) => allCategories.has(cat)),
       publishers: Array.from(
         new Set(
           books
