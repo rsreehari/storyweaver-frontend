@@ -43,12 +43,11 @@ export const FilterSidebar: React.FC<FilterSidebarProps> = ({
 
   const filteredLanguages = useMemo(() => {
     const search = deferredLanguageSearch.toLowerCase();
-    return STORYWEAVER_LANGUAGES_LIST.filter((lang) => {
-      if (!lang.toLowerCase().includes(search)) return false;
-      // only show languages that exist in catalog
-      return options.languages.some((bookLang) => bookLang.toLowerCase() === lang.toLowerCase());
-    });
-  }, [deferredLanguageSearch, options.languages]);
+    // Show all StoryWeaver languages, just filtered by the search text
+    return STORYWEAVER_LANGUAGES_LIST.filter((lang) =>
+      lang.toLowerCase().includes(search)
+    );
+  }, [deferredLanguageSearch]);
 
   const filteredCategories = useMemo(() => {
     const search = deferredCategorySearch.toLowerCase();
